@@ -1,0 +1,65 @@
+.select
+{
+    position: relative;
+    min-width: 250px;
+}
+.select__head
+{
+    align-items: center;
+    display: flex;
+    overflow: hidden;
+    padding: 7px 5px;
+}
+.select__selected
+{
+    background-color: inherit;
+    flex: 1;
+}
+.select__head:hover,
+.select__input
+{
+    cursor: pointer;
+}
+.select__body 
+{
+    border-radius: 3px;
+    bottom: 0;
+    display: none;
+    min-width: 100%;
+    padding: 6px;
+    position: absolute;
+    right: 0;
+    transform: translateY(101%);
+    width: 100%;
+    z-index: 400;
+}
+.select__option
+{
+    border-radius: 3px;
+    font-size: 0.8rem;
+    padding: 5px;
+}
+.select__option:hover 
+{
+    cursor: pointer;
+}
+
+.select--active .select__body
+{
+    display: grid;
+}
+
+.select--primary .select__head 
+{
+    /* border: 1px solid var(--color-secondary);     */
+    background-color: var(--color-tertiary);
+    border-radius: 3px;
+}
+.select--primary .select__body
+{
+    background-color: var(--color-tertiary);
+}
+.select--primary .select__option:hover
+{
+    background-color: var(--color-primary);
+}

@@ -1,0 +1,42 @@
+.table
+{
+    border-radius: 3px;
+    display: grid;
+    overflow: hidden;
+}
+.table__row
+{
+    display: flex;
+}
+.table__heading,
+.table__data
+{
+    align-items: center;
+    display: flex;
+    flex: 2 0 0;
+    justify-content: center;
+    min-width: 0;
+    padding: 20px;
+    white-space: nowrap;
+}
+.table__heading:first-of-type,
+.table__data:first-of-type
+{
+    flex: 1 0 0;
+}
+.table__data-actions
+{
+    column-gap: 10px;
+}
+
+/* .table--primary{} */
+
+.table--primary .table__heading
+{
+    background-color: var(--color-background-tertiary);
+    font-weight: 500;
+}
+.table--primary .table__data
+{
+    font-size: 0.8rem;
+}

@@ -1,0 +1,147 @@
+services:
+  nginx:
+    image: nginx:1.25-alpine # Фиксированная версия для nginx(Не ставить latest чтобы при обновлении ничего не поломалось)
+    volumes:
+      - ./src:/var/www/html # монтирует содержимое из src в var/www/html
+      - ./_docker/nginx/conf.d/:/etc/nginx/conf.d/ # монтирует настройки из _docker/nginx/conf.d в etc/nginx/conf.d/
+      - ./_docker/nginx/logs:/var/log/nginx # монтирует логи
+    ports:
+      - "${NGINX_PORT}:80"
+    depends_on: # гарантирует порядок запуска. Ожидает php
+      php:
+        condition: service_healthy # ожидает состояния healthy у php
+    container_name: nginx_primary
+    restart: unless-stopped # перезапуск в случае падении контейнера
+    networks: # изоляция сети между контейнерами, безопасность
+      - app-network
+    healthcheck: # чтобы docker знал, когда nginx готов к работе
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  php:
+    build: 
+      context: .
+      dockerfile: _docker/php/Dockerfile
+      args:
+        - INSTALL_XDEBUG=false
+    volumes:
+      - ./src:/var/www/html 
+      - composer-cache:/root/.composer/cache  # Кэш композера
+      - ./_docker/php/php.ini:/usr/local/etc/php/conf.d/zzzz-custom.ini  # Кастомный php.ini
+    depends_on:
+      mysql:
+        condition: service_healthy  # Ждем готовности MySQL
+    container_name: php_primary
+    restart: unless-stopped
+    networks:
+      - app-network
+    environment:
+      - PHP_FPM_LISTEN=9000
+      - PHP_MEMORY_LIMIT=256M
+      - PHP_UPLOAD_MAX_FILESIZE=100M
+      - PHP_POST_MAX_SIZE=100M
+      - PHP_MAX_EXECUTION_TIME=300
+      - PHP_OPCACHE_ENABLE=1
+      - PHP_OPCACHE_MEMORY_CONSUMPTION=128
+    healthcheck:
+      test: ["CMD-SHELL", "php-fpm -t || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  mysql:
+    image: mysql:8.0 
+    restart: unless-stopped
+    volumes:
+      - mysql_data:/var/lib/mysql  # ✅ Именованный volume
+      - mysql_logs:/var/log/mysql  # ✅ Для логов
+      - ./_docker/mysql/conf.d:/etc/mysql/conf.d:ro  # Кастомная конфигурация
+      - ./_docker/mysql/initdb:/docker-entrypoint-initdb.d:ro  # Скрипты инициализации
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}   
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+      TZ: ${TZ:-Europe/Moscow}
+    ports:
+      - "${DB_PORT}:3306"
+    expose:
+      - "3306"  
+    command: 
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max_connections=1000
+      - --innodb_buffer_pool_size=256M
+      - --sql-mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+    container_name: mysql_primary
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  node:
+    image: node:20-alpine
+    platform: linux/amd64  # Для совместимости на M1/M2 Mac
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+      - "${VITE_HMR_PORT:-24678}:24678"
+    volumes:
+      - ./src:/var/www/html
+      - node_modules:/var/www/html/node_modules
+      - npm-cache:/root/.npm
+      - ./_docker/node/entrypoint.sh:/entrypoint.sh:ro
+    environment:
+      - NODE_ENV=development
+      - VITE_APP_URL=${APP_URL:-http://localhost:8080}
+      - VITE_API_URL=${APP_URL:-http://localhost:8080}/api
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - NUXT_TELEMETRY_DISABLED=1
+    working_dir: /var/www/html
+    command: ["tail", "-f", "/dev/null"]
+    tty: true
+    stdin_open: true
+    container_name: node_primary
+    restart: unless-stopped
+    networks:
+      - app-network
+    depends_on: 
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5173/@vite/client"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  mysql_logs:
+    driver: local
+  node_modules:
+    driver: local
+  npm-cache:
+    driver: local
+  composer-cache:
+    driver: local
+

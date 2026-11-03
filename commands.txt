@@ -1,0 +1,44 @@
+ВКЛЮЧИТЬ OPCACHE
+
+DOCKER:
+    docker compose up -d - запустить контейнеры в фоновом режиме
+    docker compose down - остановить контейнеры 
+
+    docker compose exec node sh - получить доступ к оболочке bash контейнера node 
+    docker compose run php-cli bash - получить доступ к оболочке bash контейнера php-cli(использовать для работы с файлами)
+    docker compose run -u 0 php-cli bash - получить доступ к оболочке bash контейнера php-cli под обычным пользователем
+    docker compose exec php bash - получить доступ к оболочке bash контейнера php-fpm(использовать для работы с composer)
+
+    sudo chmod 777 -R ./ - переписать права
+
+Права для создания директорий:
+
+# Проверьте права на директорию
+ls -la storage/app/public/images
+
+# Рекомендуемые права
+chmod -R 775 storage/app/public/images
+chown -R www-data:www-data storage/app/public/images
+
+# Проверить синтаксис
+docker compose config
+
+# Собрать и запустить
+docker compose up -d --build
+
+# Проверить статус всех сервисов
+docker compose ps
+
+# Просмотреть логи
+docker compose logs -f
+
+docker run - Создает и запускает новый контейнер
+docker exec - Запускает команду в уже работающем контейнере
+
+
+php artisan route:clear
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+
+docker exec -it --user root php_primary sh

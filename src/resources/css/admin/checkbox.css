@@ -1,0 +1,29 @@
+.checkbox
+{
+    appearance: unset;
+    height: 14px;
+    position: relative;
+    width: 14px;
+}
+.checkbox:hover
+{
+    cursor: pointer;
+}
+.checkbox::after
+{
+    content: '';
+    height: 90%;
+    position: absolute;
+    transform: translate(7%, 7%);
+    width: 90%;
+}
+.checkbox--primary
+{
+    border: 1px solid var(--color-background-secondary);
+    border-radius: 2px;
+}
+.checkbox--primary:checked::after
+{
+    background-color: var(--color-background-secondary);
+    border-radius: 1px;
+}

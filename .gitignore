@@ -1,0 +1,66 @@
+# Laravel dependencies
+/src/vendor/
+/src/node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+
+# Laravel runtime
+/src/storage/logs/*
+/src/storage/framework/cache/data/*
+/src/storage/framework/sessions/*
+/src/storage/framework/views/*
+/src/bootstrap/cache/*.php
+
+# Local databases
+*.sqlite
+*.sqlite3
+*.sql
+*.sql.gz
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Docker runtime data (only if these folders exist)
+_docker/mysql/data/
+_docker/db/data/
+
+# Laravel runtime
+/src/storage/app/public/*
+!/src/storage/app/public/.gitignore
+
+# Test and coverage artifacts
+/src/coverage/
+/src/.phpunit.cache/
+
+# Docker local configuration
+docker-compose.override.yml
+_docker/mysql/data/
+_docker/postgres/data/
+
+# Logs and backups
+*.log
+*.bak
+*.backup
+
+# Local development tools
+/src/.phpunit.result.cache
+
+# Docker logs
+/_docker/nginx/logs/
+
+# MySQL local initialization secrets, if any
+# Individual non-sensitive init scripts may be committed
+
+# Local PHPDoc examples
+/phpdoc.php

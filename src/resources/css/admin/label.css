@@ -1,0 +1,21 @@
+.label 
+{
+    align-items: center;
+    column-gap: 5px;
+    display: flex;
+    user-select: none;
+}
+.label--primary
+{
+    color: var(--color-text-tertiary);
+}
+.label--secondary
+{
+    color: var(--color-text-primary);
+}
+.label--required::after
+{
+    color: var(--color-text-quaternary);
+    content: '*';
+    margin-left: -4px;
+}

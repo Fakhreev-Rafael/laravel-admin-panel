@@ -1,0 +1,15 @@
+.form-structure
+{
+    position: relative;
+}
+
+.form-structure--vertical
+{
+    display: grid;
+    row-gap: 20px;
+}
+.form-structure--vertical > .form-structure__section
+{
+    display: grid;
+    row-gap: 5px;
+}

@@ -1,0 +1,14 @@
+.heading 
+{
+    display: flex;
+    user-select: none;
+}
+.heading--primary
+{
+    font-size: 1.5rem;
+}
+.heading--secondary
+{
+    font-size: 2rem;
+    font-weight: 500;
+}

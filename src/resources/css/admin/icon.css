@@ -1,0 +1,23 @@
+.icon--s 
+{
+    height: 18px;
+    width: 18px;
+}
+.icon--m
+{
+    height: 20px;
+    width: 20px;
+}
+
+.icon--primary
+{
+    fill: var(--color-secondary);
+}
+.icon--secondary
+{
+    fill: var(--color-quaternary);
+}
+.icon--error
+{
+    fill: var(--color-error);
+}
