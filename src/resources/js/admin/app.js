@@ -98,9 +98,12 @@ const app = createApp({
 
 window.sortHandler = (option) => {
     const url = new URL(window.location.href);
+
     url.searchParams.set('sort', option.dataset.value);
-    window.location.href = url;
-}
+    url.searchParams.delete('page');
+
+    window.location.href = url.toString();
+};
 
 app.component('notification-component', Notification);
 app.component('select-component', Select);

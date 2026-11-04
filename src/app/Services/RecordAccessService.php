@@ -24,26 +24,28 @@ class RecordAccessService implements RecordAccessServiceInterface
     /**
      * @inheritdoc
      */
-    public function can(Employee $employee, string $entity, string $action, Model $record): bool {
+    public function can(Employee $employee, string $entity, string $action, Model $record): bool
+    {
+        if (!$this->entityRegistry->has($entity)) {
+            return false;
+        }
+
         $config = $this->entityRegistry->get($entity);
 
-        if ($config === null) {
+        if (!is_a($record, $config['model'])) {
             return false;
         }
 
-        if (!isset($config['model']) || !$record instanceof $config['model']) {
-            return false;
-        }
-
-        $actions = $this->entityRegistry->actions($entity);
+        $actions = $config['actions'] ?? [];
 
         if (!isset($actions[$action])) {
             return false;
         }
 
-        $scopes = $actions[$action]['scopes'] ?? [];
+        $actionScopes = $actions[$action]['scopes'] ?? [];
 
-        if (empty($scopes)) {
+        // Действие без scopes.
+        if (empty($actionScopes)) {
             return $this->actionAccessService->can(
                 $employee,
                 $entity,
@@ -51,18 +53,27 @@ class RecordAccessService implements RecordAccessServiceInterface
             );
         }
 
+        $recordScopes = $this->entityRegistry->recordScopes($entity);
+
+        // Проверяем доступ ко всем записям.
         if (
-            in_array('all', $scopes, true)
-            && $this->actionAccessService->can($employee, $entity, $action, 'all')
+            in_array('all', $actionScopes, true) &&
+            in_array('all', $recordScopes, true) &&
+            $this->actionAccessService->can(
+                $employee,
+                $entity,
+                $action,
+                'all'
+            )
         ) {
             return true;
         }
 
-        if (!in_array('own', $scopes, true)) {
-            return false;
-        }
-
-        if (!$this->actionAccessService->can($employee, $entity, $action, 'own')) {
+        // Проверяем доступ только к собственной записи.
+        if (
+            !in_array('own', $actionScopes, true) ||
+            !in_array('own', $recordScopes, true)
+        ) {
             return false;
         }
 
@@ -72,9 +83,16 @@ class RecordAccessService implements RecordAccessServiceInterface
             return false;
         }
 
-        $ownerId = $record->getAttribute($ownerField);
+        if (!$this->actionAccessService->can(
+            $employee,
+            $entity,
+            $action,
+            'own'
+        )) {
+            return false;
+        }
 
-        return $ownerId !== null
-            && (string) $ownerId === (string) $employee->getKey();
+        return (string) $record->getAttribute($ownerField)
+            === (string) $employee->getKey();
     }
 }

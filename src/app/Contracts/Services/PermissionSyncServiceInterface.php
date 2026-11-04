@@ -12,4 +12,11 @@ interface PermissionSyncServiceInterface
      * @return void
      */
     public function sync(): void;
+
+    /**
+     * Return slugs.
+     * 
+     * @return array
+     */
+    public function getObsoleteSlugs(): array;
 }

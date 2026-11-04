@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Contracts\Services\EntityRegistryInterface;
+use App\Models\Entity;
 use InvalidArgumentException;
 use Override;
 
@@ -16,7 +17,20 @@ final class EntityRegistry implements EntityRegistryInterface
      */
     public function all(): array
     {
-        return config('entities', []);
+        return Entity::query()
+            ->with([
+                'actions.scopes',
+                'fields.actions',
+                'fields.sort',
+                'recordScopes',
+            ])
+            ->get()
+            ->mapWithKeys(
+                fn(Entity $entity): array => [
+                    $entity->slug => $this->transform($entity),
+                ]
+            )
+            ->all();
     }
 
     /**
@@ -24,15 +38,7 @@ final class EntityRegistry implements EntityRegistryInterface
      */
     public function get(string $entity): array
     {
-        $configuration = config("entities.{$entity}");
-
-        if ($configuration === null) {
-            throw new InvalidArgumentException(
-                "Entity [{$entity}] is not registered."
-            );
-        }
-
-        return $configuration;
+        return $this->all()[$entity] ?? [];
     }
 
     /**
@@ -40,7 +46,9 @@ final class EntityRegistry implements EntityRegistryInterface
      */
     public function has(string $entity): bool
     {
-        return array_key_exists($entity, $this->all());
+        return Entity::query()
+            ->where('slug', $entity)
+            ->exists();
     }
 
     /**
@@ -48,7 +56,7 @@ final class EntityRegistry implements EntityRegistryInterface
      */
     public function actions(string $entity): array
     {
-        return $this->get($entity)['actions'];
+        return $this->get($entity)['actions'] ?? [];
     }
 
     /**
@@ -64,7 +72,7 @@ final class EntityRegistry implements EntityRegistryInterface
      */
     public function recordScopes(string $entity): array
     {
-        return $this->get($entity)['record_scopes'];
+        return $this->get($entity)['record_scopes'] ?? [];
     }
 
     /**
@@ -73,15 +81,75 @@ final class EntityRegistry implements EntityRegistryInterface
     #[Override]
     public function sort(string $entity): array
     {
-        if(!$this->has($entity)) {
-            return [];
+        return array_filter(
+            $this->fields($entity),
+            fn(array $config): bool =>
+            array_key_exists('sort', $config)
+        );
+    }
+
+    /**
+     * Transform the values.
+     * 
+     * @param \App\Models\Entity $entity
+     * 
+     * @return array
+     */
+    private function transform(Entity $entity): array
+    {
+        $actions = [];
+
+        foreach ($entity->actions as $action) {
+            $slug = "{$entity->slug}.{$action->action}";
+
+            $actions[$action->action] = [
+                'name' => "permissions.{$slug}",
+                'description' => "permissions.{$slug}_description",
+                'scopes' => $action->scopes
+                    ->pluck('scope')
+                    ->all(),
+            ];
         }
 
-        $fields = $this->fields($entity);
+        $fields = [];
 
-        return array_filter(
-            $fields,
-            fn (array $config): bool => array_key_exists('sort', $config)
-        );
+        foreach ($entity->fields as $field) {
+            $config = [
+                'actions' => $field->actions
+                    ->pluck('action')
+                    ->all(),
+            ];
+
+            if ($field->sort !== null) {
+                $directions = [];
+
+                if ($field->sort->allow_asc) {
+                    $directions[] = 'asc';
+                }
+
+                if ($field->sort->allow_desc) {
+                    $directions[] = 'desc';
+                }
+
+                $config['sort'] = [
+                    'default' => $field->sort->is_default,
+                    'default_direction' => $field->sort->default_direction,
+                    'directions' => $directions,
+                ];
+            }
+
+            $fields[$field->field] = $config;
+        }
+
+        return [
+            'model' => $entity->model,
+            'label' => $entity->label,
+            'owner_field' => $entity->owner_field,
+            'actions' => $actions,
+            'fields' => $fields,
+            'record_scopes' => $entity->recordScopes
+                ->pluck('scope')
+                ->all(),
+        ];
     }
 }

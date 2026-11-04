@@ -22,7 +22,7 @@ class PermissionIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'sort' => ['nullable', 'exists:sort_fields,sort'],
+            'sort' => ['nullable', 'string', 'max:255'],
         ];
     }
 

@@ -1,27 +1,39 @@
-<template lang="">
-    <div class="select">
+<template>
+    <div class="select" :class="{ 'select--active': isOpen }">
         <div class="select__head" @click="toggleSelect">
             <span class="select__selected">
-                {{ current.translated_name }}
+                {{ selected.translated_name }}
             </span>
-            <input class="select__input" type="text" :value="`${current.id}`" :name="`${name}`" hidden/>
+
+            <input
+                class="select__input"
+                type="hidden"
+                :value="selected.value"
+                :name="name"
+            />
+
             <svg viewBox="0 -960 960 960" class="icon icon--m icon--primary">
                 <path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z" />
             </svg>
         </div>
+
         <div class="select__body">
-            <span 
-                v-for="option in options" 
+            <span
+                v-for="option in options"
+                :key="option.value"
                 class="select__option"
-                :data-value="`${option.sort}`"
-                @click="selectOption"
+                :data-value="option.value"
+                @click="selectOption(option, $event)"
             >
                 {{ option.translated_name }}
             </span>
         </div>
     </div>
 </template>
+
 <script setup>
+import { ref, watch } from 'vue';
+
 const props = defineProps({
     options: {
         type: Array,
@@ -34,27 +46,35 @@ const props = defineProps({
     name: {
         type: String,
         required: true,
-    }
+    },
 });
 
-function toggleSelect(event) {
-    const SELECT = event.target.closest('.select');
-    SELECT.classList.toggle('select--active');
+const isOpen = ref(false);
+const selected = ref(props.current);
+
+watch(
+    () => props.current,
+    (value) => {
+        selected.value = value;
+    }
+);
+
+function toggleSelect() {
+    isOpen.value = !isOpen.value;
 }
-function selectOption(event) {
-    const OPTION = event.target;
-    const SELECT = OPTION.closest('.select');
-    const SELECTED = SELECT.querySelector('.select__selected');
-    const INPUT = SELECT.querySelector('.select__input');
 
-    SELECTED.textContent = OPTION.textContent;
-    INPUT.setAttribute('value', OPTION.dataset.value);
+function selectOption(option, event) {
+    selected.value = option;
+    isOpen.value = false;
 
-    SELECT.classList.remove('select--active');
+    const select = event.currentTarget.closest('.select');
+    const callbackName = select.dataset.callback;
 
-    const callbackName = SELECT.dataset.callback;
-    if (callbackName && window[callbackName]) {
-        window[callbackName](OPTION);
+    if (
+        callbackName &&
+        typeof window[callbackName] === 'function'
+    ) {
+        window[callbackName](event.currentTarget);
     }
 }
 </script>

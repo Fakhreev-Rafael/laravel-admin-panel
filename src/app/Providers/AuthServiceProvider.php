@@ -28,61 +28,84 @@ class AuthServiceProvider extends ServiceProvider
         RecordAccessServiceInterface $recordAccessService,
         FieldAccessServiceInterface $fieldAccessService
     ): void {
-        foreach ($entityRegistry->all() as $entity => $config) {
-            foreach ($config['actions'] as $action => $actionConfig) {
-                $scopes = $actionConfig['scopes'] ?? [];
+        Gate::before(function (
+            Employee $employee,
+            string $ability,
+            array $arguments = []
+        ) use (
+            $entityRegistry,
+            $actionAccessService,
+            $recordAccessService,
+            $fieldAccessService
+        ): ?bool {
+            $parts = explode('.', $ability);
 
-                if (empty($scopes)) {
-                    Gate::define(
-                        "{$entity}.{$action}",
-                        fn($employee) => $actionAccessService->can(
-                            $employee,
-                            $entity,
-                            $action
-                        )
-                    );
+            $entity = $parts[0] ?? null;
 
-                    continue;
-                }
+            if (!$entity || !$entityRegistry->has($entity)) {
+                return null;
+            }
 
-                foreach ($scopes as $scope) {
-                    Gate::define(
-                        "{$entity}.{$action}.{$scope}",
-                        fn($employee) => $actionAccessService->can(
-                            $employee,
-                            $entity,
-                            $action,
-                            $scope
-                        )
-                    );
-                }
+            // Проверка доступа к полю
+            // employees.field.email.update
 
-                Gate::define(
-                    "{$entity}.{$action}.record",
-                    fn(Employee $employee, Model $record): bool =>
-                    $recordAccessService->can(
-                        $employee,
-                        $entity,
-                        $action,
-                        $record
-                    )
+            if (
+                count($parts) === 4 &&
+                $parts[1] === 'field'
+            ) {
+                return $fieldAccessService->can(
+                    $employee,
+                    $entity,
+                    $parts[2],
+                    $parts[3]
                 );
             }
 
-            foreach ($config['fields'] ?? [] as $field => $fieldConfig) {
-                foreach ($fieldConfig['actions'] ?? [] as $action) {
-                    Gate::define(
-                        "{$entity}.field.{$field}.{$action}",
-                        fn(Employee $employee): bool =>
-                        $fieldAccessService->can(
-                            $employee,
-                            $entity,
-                            $field,
-                            $action
-                        )
-                    );
+            // Проверка доступа к конкретной записи
+            // employees.update.record
+
+            if (
+                count($parts) === 3 &&
+                $parts[2] === 'record'
+            ) {
+                $record = $arguments[0] ?? null;
+
+                if (!$record instanceof Model) {
+                    return false;
                 }
+
+                return $recordAccessService->can(
+                    $employee,
+                    $entity,
+                    $parts[1],
+                    $record
+                );
             }
-        }
+
+            // Проверка действия с областью доступа
+            // employees.view.all
+
+            if (count($parts) === 3) {
+                return $actionAccessService->can(
+                    $employee,
+                    $entity,
+                    $parts[1],
+                    $parts[2]
+                );
+            }
+
+            // Проверка действия без области доступа
+            // employees.view
+
+            if (count($parts) === 2) {
+                return $actionAccessService->can(
+                    $employee,
+                    $entity,
+                    $parts[1]
+                );
+            }
+
+            return false;
+        });
     }
 }

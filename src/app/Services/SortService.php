@@ -24,7 +24,8 @@ class SortService implements SortServiceInterface
     /**
      * @inheritdoc
      */
-    public function getAvailable(Employee $employee, string $entity): array {
+    public function getAvailable(Employee $employee, string $entity): array
+    {
         $sort = $this->entityRegistry->sort($entity);
 
         $allowedFields = $this->fieldAccessService->getAllowedFields(
@@ -35,8 +36,8 @@ class SortService implements SortServiceInterface
 
         return array_filter(
             $sort,
-            fn (array $config, string $field): bool =>
-                in_array($field, $allowedFields, true),
+            fn(array $config, string $field): bool =>
+            in_array($field, $allowedFields, true),
             ARRAY_FILTER_USE_BOTH
         );
     }
@@ -44,7 +45,8 @@ class SortService implements SortServiceInterface
     /**
      * @inheritdoc
      */
-    public function resolve(Employee $employee, string $entity, ?string $sort): array {
+    public function resolve(Employee $employee, string $entity, ?string $sort): array
+    {
         $available = $this->getAvailable($employee, $entity);
 
         if (empty($available)) {
@@ -55,7 +57,12 @@ class SortService implements SortServiceInterface
 
         if ($sort !== null) {
             foreach ($available as $field => $config) {
-                foreach ($config['sort']['directions'] ?? ['asc', 'desc'] as $direction) {
+                $directions = $config['sort']['directions'] ?? [
+                    'asc',
+                    'desc',
+                ];
+
+                foreach ($directions as $direction) {
                     if ($sort === "{$field}_{$direction}") {
                         return [
                             'field' => $field,
@@ -67,26 +74,42 @@ class SortService implements SortServiceInterface
         }
 
         foreach ($available as $field => $config) {
-            if (($config['sort']['default'] ?? false) === true) {
-                $directions = $config['sort']['directions'] ?? ['asc', 'desc'];
-                $direction = $config['sort']['default_direction'] ?? 'asc';
+            if (!($config['sort']['default'] ?? false)) {
+                continue;
+            }
 
-                if (in_array($direction, $directions, true)) {
-                    return [
-                        'field' => $field,
-                        'direction' => $direction,
-                    ];
-                }
+            $directions = $config['sort']['directions'] ?? [
+                'asc',
+                'desc',
+            ];
+
+            $direction = $config['sort']['default_direction']
+                ?? 'asc';
+
+            if (in_array($direction, $directions, true)) {
+                return [
+                    'field' => $field,
+                    'direction' => $direction,
+                ];
             }
         }
 
-        $field = array_key_first($available);
-        $config = $available[$field]['sort'];
-        $directions = $config['directions'] ?? ['asc', 'desc'];
+        foreach ($available as $field => $config) {
+            $directions = $config['sort']['directions'] ?? [
+                'asc',
+                'desc',
+            ];
 
-        return [
-            'field' => $field,
-            'direction' => $directions[0],
-        ];
+            if (!empty($directions)) {
+                return [
+                    'field' => $field,
+                    'direction' => $directions[0],
+                ];
+            }
+        }
+
+        throw new AuthorizationException(
+            'No valid sort directions are available.'
+        );
     }
 }

@@ -6,7 +6,6 @@ namespace App\Actions\Admin;
 
 use App\Contracts\Actions\Admin\PermissionIndexActionInterface;
 use App\Contracts\Repositories\PermissionRepositoryInterface;
-use App\Contracts\Repositories\SortFieldRepositoryInterface;
 use App\Contracts\Services\AuthServiceInterface;
 use App\Contracts\Services\FieldAccessServiceInterface;
 use App\Contracts\Services\SortServiceInterface;
@@ -15,12 +14,6 @@ use Illuminate\Auth\Access\AuthorizationException;
 
 class PermissionIndexAction implements PermissionIndexActionInterface
 {
-    /**
-     * @param \App\Contracts\Repositories\PermissionRepositoryInterface $permissionRepository
-     * @param \App\Contracts\Services\FieldAccessServiceInterface $fieldAccessService
-     * @param \App\Contracts\Services\AuthServiceInterface $authService
-     * @param \App\Contracts\Services\SortServiceInterface $sortService
-     */
     public function __construct(
         protected PermissionRepositoryInterface $permissionRepository,
         protected FieldAccessServiceInterface $fieldAccessService,
@@ -28,9 +21,6 @@ class PermissionIndexAction implements PermissionIndexActionInterface
         protected SortServiceInterface $sortService
     ) {}
 
-    /**
-     * @inheritdoc
-     */
     public function execute(?string $sort): PermissionIndexViewModel
     {
         $employee = $this->authService->getCurrentEmployee();
@@ -53,8 +43,12 @@ class PermissionIndexAction implements PermissionIndexActionInterface
             $sort
         );
 
-        $permissions = $this->permissionRepository
-            ->getWithPaginate(10, $sort, $allowedFields);
+        $permissions = $this->permissionRepository->getWithPaginate(
+            $employee,
+            10,
+            $sort,
+            $allowedFields
+        );
 
         $availableSort = $this->sortService->getAvailable(
             $employee,
@@ -64,7 +58,8 @@ class PermissionIndexAction implements PermissionIndexActionInterface
         return new PermissionIndexViewModel(
             $permissions,
             $availableSort,
-            $sort
+            $sort,
+            $allowedFields
         );
     }
 }

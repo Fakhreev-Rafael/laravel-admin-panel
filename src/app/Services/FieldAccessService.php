@@ -26,10 +26,6 @@ class FieldAccessService implements FieldAccessServiceInterface
         string $field,
         string $action
     ): bool {
-        if (!$this->entityRegistry->has($entity)) {
-            return false;
-        }
-
         $fields = $this->entityRegistry->fields($entity);
 
         if (!isset($fields[$field])) {
@@ -44,11 +40,16 @@ class FieldAccessService implements FieldAccessServiceInterface
             return false;
         }
 
-        $slug = "{$entity}.field.{$field}.{$action}";
-
         return $employee->roles()
-            ->whereHas('permissions', function ($query) use ($slug) {
-                $query->where('slug', $slug);
+            ->whereHas('permissions', function ($query) use (
+                $entity,
+                $field,
+                $action
+            ) {
+                $query->where(
+                    'slug',
+                    "{$entity}.field.{$field}.{$action}"
+                );
             })
             ->exists();
     }
@@ -61,14 +62,57 @@ class FieldAccessService implements FieldAccessServiceInterface
         string $entity,
         string $action
     ): array {
-        $allowedFields = [];
+        $fields = $this->entityRegistry->fields($entity);
 
-        foreach ($this->entityRegistry->fields($entity) as $field => $config) {
-            if ($this->can($employee, $entity, $field, $action)) {
-                $allowedFields[] = $field;
+        if (empty($fields)) {
+            return [];
+        }
+
+        $available = [];
+
+        foreach ($fields as $field => $config) {
+            if (in_array(
+                $action,
+                $config['actions'] ?? [],
+                true
+            )) {
+                $available[] = $field;
             }
         }
 
-        return $allowedFields;
+        if (empty($available)) {
+            return [];
+        }
+
+        $slugs = array_map(
+            fn(string $field): string =>
+            "{$entity}.field.{$field}.{$action}",
+            $available
+        );
+
+        $allowedSlugs = $employee->roles()
+            ->whereHas('permissions', function ($query) use ($slugs) {
+                $query->whereIn('slug', $slugs);
+            })
+            ->with([
+                'permissions' => function ($query) use ($slugs) {
+                    $query->whereIn('slug', $slugs);
+                },
+            ])
+            ->get()
+            ->pluck('permissions')
+            ->flatten()
+            ->pluck('slug')
+            ->unique()
+            ->all();
+
+        return array_values(array_filter(
+            $available,
+            fn(string $field): bool => in_array(
+                "{$entity}.field.{$field}.{$action}",
+                $allowedSlugs,
+                true
+            )
+        ));
     }
 }

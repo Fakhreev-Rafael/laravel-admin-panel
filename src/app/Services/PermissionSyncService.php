@@ -8,6 +8,7 @@ use App\Contracts\Services\EntityRegistryInterface;
 use App\Contracts\Services\PermissionSyncServiceInterface;
 use App\Models\Permission;
 use Override;
+use Illuminate\Support\Facades\DB;
 
 class PermissionSyncService implements PermissionSyncServiceInterface
 {
@@ -24,66 +25,93 @@ class PermissionSyncService implements PermissionSyncServiceInterface
     #[Override]
     public function sync(): void
     {
+        $slugs = $this->getExpectedSlugs();
+
+        DB::transaction(function () use ($slugs): void {
+            foreach ($slugs as $slug) {
+                Permission::firstOrCreate(
+                    ['slug' => $slug],
+                    $this->getAttributes($slug)
+                );
+            }
+        });
+    }
+
+    /**
+     * @inheritdoc
+     */
+    #[Override]
+    public function getObsoleteSlugs(): array
+    {
+        $expected = $this->getExpectedSlugs();
+
+        return Permission::query()
+            ->where('is_system', true)
+            ->whereNotIn('slug', $expected)
+            ->pluck('slug')
+            ->all();
+    }
+
+    /**
+     * Return slugs.
+     * 
+     * @return array
+     */
+    private function getExpectedSlugs(): array
+    {
+        $slugs = [];
+
         foreach ($this->entityRegistry->all() as $entity => $config) {
-            foreach ($config['actions'] as $action => $actionConfig) {
+            foreach ($config['actions'] ?? [] as $action => $actionConfig) {
                 $scopes = $actionConfig['scopes'] ?? [];
 
                 if (empty($scopes)) {
-                    $this->createPermission($entity, $action);
-
+                    $slugs[] = "{$entity}.{$action}";
                     continue;
                 }
 
                 foreach ($scopes as $scope) {
-                    $this->createPermission($entity, $action, $scope);
+                    $slugs[] = "{$entity}.{$action}.{$scope}";
                 }
             }
 
             foreach ($config['fields'] ?? [] as $field => $fieldConfig) {
-                foreach ($fieldConfig['actions'] as $action) {
-                    Permission::firstOrCreate(
-                        [
-                            'slug' => "{$entity}.field.{$field}.{$action}",
-                        ],
-                        [
-                            'entity' => $entity,
-                            'action' => $action,
-                            'scope' => null,
-                            'field' => $field,
-                            'is_system' => true,
-                        ]
-                    );
+                foreach ($fieldConfig['actions'] ?? [] as $action) {
+                    $slugs[] = "{$entity}.field.{$field}.{$action}";
                 }
             }
         }
+
+        return array_values(array_unique($slugs));
     }
 
     /**
-     * Create a permission.
+     * Return attributes.
      * 
-     * @param string $entity
-     * @param string $action
-     * @param ?string $scope = null
+     * @param string $slug
      * 
-     * @return void
+     * @return array
      */
-    private function createPermission(string $entity, string $action, ?string $scope = null): void
+    private function getAttributes(string $slug): array
     {
-        $slug = "{$entity}.{$action}";
+        $parts = explode('.', $slug);
 
-        if ($scope !== null) {
-            $slug .= ".{$scope}";
+        if (($parts[1] ?? null) === 'field') {
+            return [
+                'entity' => $parts[0],
+                'action' => $parts[3],
+                'scope' => null,
+                'field' => $parts[2],
+                'is_system' => true,
+            ];
         }
 
-        Permission::firstOrCreate(
-            ['slug' => $slug],
-            [
-                'entity' => $entity,
-                'action' => $action,
-                'scope' => $scope,
-                'field' => null,
-                'is_system' => true,
-            ]
-        );
+        return [
+            'entity' => $parts[0],
+            'action' => $parts[1],
+            'scope' => $parts[2] ?? null,
+            'field' => null,
+            'is_system' => true,
+        ];
     }
 }

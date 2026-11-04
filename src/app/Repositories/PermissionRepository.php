@@ -4,36 +4,45 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Collections\FilterCollection;
-use App\Collections\PermissionCollection;
 use App\Contracts\Repositories\PermissionRepositoryInterface;
-use App\Contracts\Sorts\PermissionSortInterface;
-use App\Helpers\Logger;
+use App\Contracts\Services\RecordQueryServiceInterface;
+use App\Models\Employee;
 use App\Models\Permission;
-use App\Models\SortField;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Override;
 
 class PermissionRepository implements PermissionRepositoryInterface
 {
     /**
-     * @param \App\Contracts\Sorts\PermissionSortInterface $permissionSort
+     * @param \App\Contracts\Services\RecordQueryServiceInterface $recordQueryService
      */
     public function __construct(
-        protected PermissionSortInterface $permissionSort
+        protected RecordQueryServiceInterface $recordQueryService
     ) {}
 
     /**
      * @inheritdoc
      */
-    public function getWithPaginate(int $perPage, array $sort, array $fields): LengthAwarePaginator
+    public function getWithPaginate(Employee $employee, int $perPage, array $sort, array $fields): LengthAwarePaginator
     {
-        return Permission::query()
-            ->select($fields)
+        $query = $this->recordQueryService->apply(
+            $employee,
+            'permissions',
+            'view',
+            Permission::query()
+        );
+
+        $selectFields = array_values(array_unique([
+            'id',
+            ...$fields,
+        ]));
+
+        return $query
+            ->select($selectFields)
             ->orderBy(
                 $sort['field'],
                 $sort['direction']
             )
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
     }
 }

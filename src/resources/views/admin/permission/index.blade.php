@@ -15,8 +15,11 @@
         <ul class="toolbar">
             <li class="toolbar__element">
                 <label class="label label--primary">{{ __('labels.sort_by') }}:</label>
-                <select-component class="select--primary" id="sort" :current="{{json_encode($viewModel->sortField())}}"
-                    :options="{{json_encode($viewModel->sortFields())}}"
+                <select-component
+                    class="select--primary"
+                    id="sort"
+                    :current="{{ \Illuminate\Support\Js::from($viewModel->currentSort()) }}"
+                    :options="{{ \Illuminate\Support\Js::from($viewModel->sortOptions()) }}"
                     data-callback="sortHandler"
                     name="sort" />
             </li>
@@ -31,45 +34,80 @@
 <section class="main__section grid-container">
     <div class="grid-container__column--24">
         <div class="table table--primary">
+
             <div class="table__row">
-                <div class="table__heading">
-                    {{ __('headings.id') }}
-                </div>
-                <div class="table__heading">
-                    {{ __('headings.name') }}
-                </div>
-                <div class="table__heading">
-                    {{ __('headings.entity') }}
-                </div>
-                <div class="table__heading">
-                    {{ __('headings.created_at') }}
-                </div>
-                <div class="table__heading">
-                    {{ __('headings.updated_at') }}
-                </div>
+
+                @if($viewModel->canViewField('id'))
+                    <div class="table__heading">
+                        {{ __('headings.id') }}
+                    </div>
+                @endif
+
+                @if($viewModel->canViewField('slug'))
+                    <div class="table__heading">
+                        {{ __('headings.name') }}
+                    </div>
+                @endif
+
+                @if($viewModel->canViewField('entity'))
+                    <div class="table__heading">
+                        {{ __('headings.entity') }}
+                    </div>
+                @endif
+
+                @if($viewModel->canViewField('created_at'))
+                    <div class="table__heading">
+                        {{ __('headings.created_at') }}
+                    </div>
+                @endif
+
+                @if($viewModel->canViewField('updated_at'))
+                    <div class="table__heading">
+                        {{ __('headings.updated_at') }}
+                    </div>
+                @endif
+
                 <div class="table__heading">
                     {{ __('headings.actions') }}
                 </div>
+
             </div>
+
             @foreach($viewModel->permissions() as $permission)
-            <div class="table__row">
-                <div class="table__data">
-                    {{ $permission->id }}
-                </div>
-                <div class="table__data">
-                    {{ __('permissions.' . $permission->slug) }}
-                </div>
-                <div class="table__data">
-                    {{ __('entities.' . $permission->entity) }}
-                </div>
-                <div class="table__data">
-                    {{ $permission->created_at }}
-                </div>
-                <div class="table__data">
-                    {{ $permission->updated_at }}
-                </div>
-                <div class="table__data table__data-actions">
-                    <a class="button button-icon button-icon--primary" title="{{ __('titles.edit') }}" href="#">
+                <div class="table__row">
+
+                    @if($viewModel->canViewField('id'))
+                        <div class="table__data">
+                            {{ $permission->id }}
+                        </div>
+                    @endif
+
+                    @if($viewModel->canViewField('slug'))
+                        <div class="table__data">
+                            {{ __('permissions.' . $permission->slug) }}
+                        </div>
+                    @endif
+
+                    @if($viewModel->canViewField('entity'))
+                        <div class="table__data">
+                            {{ __('entities.' . $permission->entity) }}
+                        </div>
+                    @endif
+
+                    @if($viewModel->canViewField('created_at'))
+                        <div class="table__data">
+                            {{ $permission->created_at }}
+                        </div>
+                    @endif
+
+                    @if($viewModel->canViewField('updated_at'))
+                        <div class="table__data">
+                            {{ $permission->updated_at }}
+                        </div>
+                    @endif
+
+                    <div class="table__data table__data-actions">
+                        <a class="button button-icon button-icon--primary" title="{{ __('titles.edit') }}" href="#">
                         <x-admin.icons.pencil class="icon--s icon--primary" />
                     </a>
                     <form action="#">
@@ -77,9 +115,11 @@
                             <x-admin.icons.delete class="icon--s icon--error" />
                         </button>
                     </form>
+                    </div>
+
                 </div>
-            </div>
             @endforeach
+
         </div>
     </div>
 </section>
