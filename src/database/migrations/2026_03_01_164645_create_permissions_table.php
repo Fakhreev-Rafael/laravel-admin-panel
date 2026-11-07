@@ -17,12 +17,11 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('entity');
             $table->string('action');
-            $table->string('scope')->nullable();
-            $table->string('field')->nullable();
             $table->boolean('is_system')->default(true);
 
             $table->timestamps();
 
+            $table->unique(['entity', 'action']);
         });
     }
 

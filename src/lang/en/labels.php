@@ -8,6 +8,8 @@ return [
     |--------------------------------------------------------------------------
     */
 
+    'ascending' => 'Ascending',
+    'descending' => 'Descending',
     'email' => 'Email',
     'filter_by' => 'Filter by',
     'group' => 'Group',

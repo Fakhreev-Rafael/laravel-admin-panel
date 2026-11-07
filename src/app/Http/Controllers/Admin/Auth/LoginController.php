@@ -38,39 +38,11 @@ class LoginController extends CoreController
      */
     public function handle(LoginHandleRequest $request, LoginHandleActionInterface $loginHandleAction): RedirectResponse
     {
-        Logger::http()->info('Incoming request', [
-            'controller' => __CLASS__,
-            'function' => __FUNCTION__,
-            'ip' => $request->ip(),
-            'method' => $request->method(),
-            'uri' => $request->path(),
-            'data' => $request->all(),
-        ]);  
+        $data = LoginHandleData::fromRequest($request);
 
-        try {
-            
-            $data = LoginHandleData::fromRequest($request);
+        $loginHandleAction->execute($data);
 
-            $loginHandleAction->execute($data);
-
-            $request->session()->regenerate();
-
-        } catch (EmployeeNotFoundException|InvalidPasswordException $e) {
-
-            Logger::errors()->error('Error of authentication', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            session()->flash('notification', [
-                'heading' => trans('notifications.headings.error'),
-                'text' => trans('notifications.text.login'),
-                'type' => 'error',
-            ]);
-
-            return back();
-
-        }
+        $request->session()->regenerate();
 
         return redirect()->route('admin.permission.index');
     }

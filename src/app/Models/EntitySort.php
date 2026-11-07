@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
+use App\Collections\EntitySortCollection;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EntitySort extends Model
 {
@@ -13,11 +14,11 @@ class EntitySort extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'entity_field_id',
+        'entity',
+        'field',
+        'direction',
+        'is_active',
         'is_default',
-        'default_direction',
-        'allow_asc',
-        'allow_desc',
     ];
 
     /**
@@ -28,19 +29,20 @@ class EntitySort extends Model
     protected function casts(): array
     {
         return [
+            'is_active' => 'boolean',
             'is_default' => 'boolean',
-            'allow_asc' => 'boolean',
-            'allow_desc' => 'boolean',
         ];
     }
 
     /**
-     * Get the field.
+     * Create a new Eloquent Collection instance.
+     *
+     * @param  array  $models
      * 
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function field(): BelongsTo
+    public function newCollection(array $models = []): Collection
     {
-        return $this->belongsTo(EntityField::class, 'entity_field_id');
+        return new EntitySortCollection($models);
     }
 }

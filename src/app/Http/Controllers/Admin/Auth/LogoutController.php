@@ -19,23 +19,7 @@ class LogoutController extends CoreController
      */
     public function handle(LogoutHandleActionInterface $logoutHandleAction)
     {
-        Logger::http()->info('Incoming request', [
-            'controller' => __CLASS__,
-            'function' => __FUNCTION__,
-            'ip' => request()->ip(),
-            'method' => request()->method(),
-            'uri' => request()->path(),
-            'user' => request()->user()?->id,
-        ]);
-
-        try {
-            
-            $logoutHandleAction->execute();
-
-        } catch (\Throwable $th) {
-            
-            abort(404);
-        }
+        $logoutHandleAction->execute();
 
         request()->session()->invalidate();
         request()->session()->regenerateToken();

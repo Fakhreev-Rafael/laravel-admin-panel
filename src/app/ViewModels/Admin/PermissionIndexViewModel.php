@@ -4,41 +4,37 @@ declare(strict_types=1);
 
 namespace App\ViewModels\Admin;
 
+use App\Collections\EntitySortCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class PermissionIndexViewModel
 {
+    /**
+     * @param \Illuminate\Pagination\LengthAwarePaginator $permissions
+     * @param \App\Collections\EntitySortCollection $availableSorts
+     */
     public function __construct(
         protected LengthAwarePaginator $permissions,
-        protected array $availableSort,
-        protected array $sort,
-        protected array $allowedFields,
+        protected EntitySortCollection $availableSorts,
     ) {}
 
+    /**
+     * Return permissions.
+     * 
+     * @return \Illuminate\Pagination\LengthAwarePaginator
+     */
     public function permissions(): LengthAwarePaginator
     {
         return $this->permissions;
     }
 
-    public function availableSort(): array
-    {
-        return $this->availableSort;
-    }
-
-    public function sort(): array
-    {
-        return $this->sort;
-    }
-
-    public function canViewField(string $field): bool
-    {
-        return in_array($field, $this->allowedFields, true);
-    }
-
+    /**
+     * Return sort options.
+     * 
+     * @return array
+     */
     public function sortOptions(): array
     {
-        $options = [];
-
         $fieldLabels = [
             'id' => 'ID',
             'slug' => __('headings.name'),
@@ -47,37 +43,41 @@ class PermissionIndexViewModel
             'updated_at' => __('headings.updated_at'),
         ];
 
-        foreach ($this->availableSort as $field => $config) {
-            $label = $fieldLabels[$field] ?? $field;
+        $options = [];
 
-            foreach ($config['sort']['directions'] ?? [] as $direction) {
-                $options[] = [
-                    'value' => "{$field}_{$direction}",
-                    'translated_name' => $label . ': ' . (
-                        $direction === 'asc'
-                        ? __('labels.ascending')
-                        : __('labels.descending')
-                    ),
-                ];
-            }
+        foreach ($this->availableSorts as $sort) {
+            $field = $sort->field;
+            $direction = $sort->direction;
+
+            $options[] = [
+                'value' => "{$field}_{$direction}",
+                'translated_name' => (
+                    $fieldLabels[$field] ?? $field
+                ) . ': ' . (
+                    $direction === 'asc'
+                    ? __('labels.ascending')
+                    : __('labels.descending')
+                ),
+                'is_default' => $sort->is_default,
+            ];
         }
 
         return $options;
     }
+    /*
 
-    public function currentSort(): array
-    {
-        $value = "{$this->sort['field']}_{$this->sort['direction']}";
+                    
 
-        foreach ($this->sortOptions() as $option) {
-            if ($option['value'] === $value) {
-                return $option;
-            }
-        }
 
-        return [
-            'value' => $value,
-            'translated_name' => $value,
-        ];
-    }
+                              <div class="table__data table__data-actions">
+                    <a class="button button-icon button-icon--primary" title="{{ __('titles.edit') }}" href="#">
+                        <x-admin.icons.pencil class="icon--s icon--primary" />
+                    </a>
+                    <form action="#">
+                        <button class="button button-icon button-icon--small button-icon--primary" title="{{ __('titles.delete') }}">
+                            <x-admin.icons.delete class="icon--s icon--error" />
+                        </button>
+                    </form>
+                </div>
+                    */
 }

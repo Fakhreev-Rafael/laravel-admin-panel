@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Hash;
@@ -34,15 +33,15 @@ class Employee extends Authenticatable
     ];
 
     /**
-     * Make hash from password.
-     * 
-     * @return \Illuminate\Database\Eloquent\Casts\Attribute
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
      */
-    protected function password(): Attribute
+    protected function casts(): array
     {
-        return Attribute::make(           
-            set: fn ($value) => Hash::make($value)
-        );
+        return [
+            'password' => 'hashed',
+        ];
     }
 
     /**

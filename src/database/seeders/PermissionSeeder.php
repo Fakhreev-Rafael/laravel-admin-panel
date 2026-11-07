@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Contracts\Services\PermissionSyncServiceInterface;
+use App\Enums\Permissions;
 use App\Models\Permission;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class PermissionSeeder extends Seeder
@@ -14,8 +13,19 @@ class PermissionSeeder extends Seeder
      * 
      * @return void
      */
-    public function run(PermissionSyncServiceInterface $permissionSyncService): void
+    public function run(): void
     {
-        $permissionSyncService->sync();       
+        foreach (Permissions::cases() as $permission) {
+            [$entity, $action] = explode('.', $permission->value, 2);
+
+            Permission::query()->updateOrCreate(
+                ['slug' => $permission->value],
+                [
+                    'entity' => $entity,
+                    'action' => $action,
+                    'is_system' => true,
+                ]
+            );
+        }
     }
 }

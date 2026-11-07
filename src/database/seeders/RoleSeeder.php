@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Permissions;
+use App\Enums\Roles;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -16,19 +18,27 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $role = Role::query()->firstOrCreate(
+        $root = Role::query()->updateOrCreate(
             [
-                'slug' => 'root',
+                'slug' => Roles::Root->value,
             ],
             [
                 'name' => 'Root',
-                'description' => 'System root',
+                'description' => 'Полный доступ к системе',
                 'is_system' => true,
             ]
         );
 
-        $role->permissions()->sync(
-            Permission::query()->pluck('id')->all()
+        $slugs = array_map(
+            fn(Permissions $permission) => $permission->value,
+            Permissions::cases()
         );
+
+        $permissionIds = Permission::query()
+            ->whereIn('slug', $slugs)
+            ->pluck('id')
+            ->all();
+
+        $root->permissions()->sync($permissionIds);
     }
 }

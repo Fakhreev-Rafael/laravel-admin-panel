@@ -11,18 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('entity_fields', function (Blueprint $table) {
+        Schema::create('entity_sorts', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('entity_id')
-                ->constrained('entities')
-                ->cascadeOnDelete();
-
+            $table->string('entity');
             $table->string('field');
+            $table->enum('direction', ['asc', 'desc']);
+
+            $table->boolean('is_active')->default(true);
+            $table->boolean('is_default')->default(false);
 
             $table->timestamps();
 
-            $table->unique(['entity_id', 'field']);
+            $table->unique(['entity', 'field', 'direction']);
+            $table->index(['entity', 'is_active']);
         });
     }
 
@@ -31,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('entity_fields');
+        Schema::dropIfExists('entity_sorts');
     }
 };

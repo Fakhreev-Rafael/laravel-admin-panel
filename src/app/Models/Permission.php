@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Builders\PermissionBuilder;
 use App\Collections\PermissionCollection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -20,9 +19,6 @@ class Permission extends Model
         'slug',
         'entity',
         'action',
-        'group',
-        'scope',
-        'field',
         'is_system',
     ];
 
@@ -39,7 +35,7 @@ class Permission extends Model
     }
 
     /**
-     * Get the employees.
+     * Get the roles.
      * 
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
@@ -68,16 +64,6 @@ class Permission extends Model
     public function getTranslatedName(): string
     {
         return trans('permissions.' . $this->slug);
-    }
-
-    /**
-     * Return translated name of the group.
-     * 
-     * @return string
-     */
-    public function getTranslatedGroup(): string
-    {
-        return trans('permissions.groups.' . $this->group);
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Contracts\Repositories;
 
 use App\Models\Employee;
+use App\Models\EntitySort;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 interface PermissionRepositoryInterface
@@ -12,13 +13,11 @@ interface PermissionRepositoryInterface
     /**
      * Return permissions with paginate.
      * 
-     * @param \App\Models\Employee $employee
      * @param int $perPage
-     * @param array $sort
-     * @param array $fields
+     * @param \App\Models\EntitySort $entitySort
      * 
      * @return \Illuminate\Pagination\LengthAwarePaginator
      */
-    public function getWithPaginate(Employee $employee, int $perPage, array $sort, array $fields): LengthAwarePaginator;
+    public function getWithPaginate(int $perPage, EntitySort $entitySort): LengthAwarePaginator;
 
 }

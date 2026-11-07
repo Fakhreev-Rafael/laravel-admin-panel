@@ -14,33 +14,18 @@ interface AuthServiceInterface
      * 
      * @param \App\Enums\Guards $guard
      * @param array $credentials
-     * @param bool $remember
+     * @param bool $remember = false
      * 
      * @return bool
      */
-    public function login(Guards $guard, array $credentials, bool $remember): bool;
+    public function login(Guards $guard, array $credentials, bool $remember = false): bool;
 
     /**
      * Logout the user.
      * 
+     * @param \App\Enums\Guards $guard
+     * 
      * @return void
      */
-    public function logout(): void;
-
-    /**
-     * Compare the password and the hashed password.
-     * 
-     * @param string $password
-     * @param string $hashedPassword
-     * 
-     * @return bool
-     */
-    public function verifyPassword(string $password, string $hashedPassword): bool;
-
-    /**
-     * Return the current user.
-     *  
-     * @return \App\Models\Employee 
-     */
-    public function getCurrentEmployee(): Employee;
+    public function logout(Guards $guard): void;
 }

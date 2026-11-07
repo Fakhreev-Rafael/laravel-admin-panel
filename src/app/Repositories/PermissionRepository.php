@@ -5,43 +5,24 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Contracts\Repositories\PermissionRepositoryInterface;
-use App\Contracts\Services\RecordQueryServiceInterface;
-use App\Models\Employee;
+use App\Models\EntitySort;
 use App\Models\Permission;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class PermissionRepository implements PermissionRepositoryInterface
 {
     /**
-     * @param \App\Contracts\Services\RecordQueryServiceInterface $recordQueryService
-     */
-    public function __construct(
-        protected RecordQueryServiceInterface $recordQueryService
-    ) {}
-
-    /**
      * @inheritdoc
      */
-    public function getWithPaginate(Employee $employee, int $perPage, array $sort, array $fields): LengthAwarePaginator
+    public function getWithPaginate(int $perPage, EntitySort $entitySort): LengthAwarePaginator
     {
-        $query = $this->recordQueryService->apply(
-            $employee,
-            'permissions',
-            'view',
-            Permission::query()
-        );
+        $query = Permission::query()
+            ->orderBy($entitySort->field, $entitySort->direction);
 
-        $selectFields = array_values(array_unique([
-            'id',
-            ...$fields,
-        ]));
-
+        if($entitySort->field !== 'id') {
+            $query->orderBy('id', 'asc');
+        }
         return $query
-            ->select($selectFields)
-            ->orderBy(
-                $sort['field'],
-                $sort['direction']
-            )
             ->paginate($perPage)
             ->withQueryString();
     }

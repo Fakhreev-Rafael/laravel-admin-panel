@@ -7,6 +7,7 @@ namespace App\Actions\Admin;
 use App\Contracts\Actions\Admin\LogoutHandleActionInterface;
 use App\Contracts\Repositories\EmployeeRepositoryInterface;
 use App\Contracts\Services\AuthServiceInterface;
+use App\Enums\Guards;
 use App\Helpers\Logger;
 
 class LogoutHandleAction implements LogoutHandleActionInterface
@@ -24,6 +25,6 @@ class LogoutHandleAction implements LogoutHandleActionInterface
      */
     public function execute(): void
     {
-        $this->authService->logout();
+        $this->authService->logout(Guards::Employee);
     }
 }

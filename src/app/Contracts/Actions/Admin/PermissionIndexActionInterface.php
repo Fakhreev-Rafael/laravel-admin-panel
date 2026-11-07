@@ -11,7 +11,7 @@ interface PermissionIndexActionInterface
     /**
      * Execute this action.
      * 
-     * @param string|null $sort
+     * @param ?string $sort
      * 
      * @return \App\ViewModels\Admin\PermissionIndexViewModel
      */

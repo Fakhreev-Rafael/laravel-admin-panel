@@ -23,10 +23,10 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
-            EntitySeeder::class,
             PermissionSeeder::class,
             RoleSeeder::class,
             EmployeeSeeder::class,
+            EntitySortSeeder::class,
         ]);
     }
 }

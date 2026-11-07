@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     */
  
-    'actions' => 'Actions',
+    'action' => 'Action',
     'created_at' => 'Created at',
     'entity' => 'Entity',
     'group' => 'Group',

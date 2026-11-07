@@ -11,15 +11,14 @@ use App\DataTransferObjects\Admin\LoginHandleData;
 use App\Exceptions\EmployeeNotFoundException;
 use App\Exceptions\InvalidPasswordException;
 use App\Enums\Guards;
+use Illuminate\Validation\ValidationException;
 
 class LoginHandleAction implements LoginHandleActionInterface
 {
     /**
-     * @param \App\Contracts\Repositories\EmployeeRepositoryInterface $employeeRepository
      * @param \App\Contracts\Services\AuthServiceInterface $authService
      */
     public function __construct(
-        protected EmployeeRepositoryInterface $employeeRepository,
         protected AuthServiceInterface $authService
         )
     {}
@@ -29,21 +28,21 @@ class LoginHandleAction implements LoginHandleActionInterface
      */
     public function execute(LoginHandleData $data): void
     {
-        $employee = $this->employeeRepository->getByEmail($data->email);
-
-        if(is_null($employee)) {
-            throw new EmployeeNotFoundException("Employee is not found by email: {$data->email}");
-        }
-
-        if (!$this->authService->verifyPassword($data->password, $employee->password)) {
-            throw new InvalidPasswordException("Password is invalid");
-        }
-
         $credentials = [
             'email' => $data->email,
             'password' => $data->password,
         ];
 
-        $this->authService->login(Guards::Employee, $credentials, $data->remember);
+        $authenticated = $this->authService->login(
+            Guards::Employee,
+            $credentials,
+            $data->remember
+        );
+
+        if (!$authenticated) {
+            throw ValidationException::withMessages([
+                'email' => trans('auth.failed'),
+            ]);
+        }
     }
 }
